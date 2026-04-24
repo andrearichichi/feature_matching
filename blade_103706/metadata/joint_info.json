@@ -1,0 +1,30 @@
+{
+  "all_active_joints": [
+    {
+      "dof": 1,
+      "index": 0,
+      "limits": [
+        [
+          -0.20000000298023224,
+          0.0
+        ]
+      ],
+      "name": "blade_103706_joint",
+      "qpos_offset": 0,
+      "type": "prismatic"
+    }
+  ],
+  "selected_joint": {
+    "dof": 1,
+    "index": 0,
+    "limits": [
+      [
+        -0.20000000298023224,
+        0.0
+      ]
+    ],
+    "name": "blade_103706_joint",
+    "qpos_offset": 0,
+    "type": "prismatic"
+  }
+}

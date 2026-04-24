@@ -1,0 +1,228 @@
+{
+  "cameras": [
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_000",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        4.0,
+        0.0,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_001",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        2.8284271247461903,
+        2.82842712474619,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_002",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        2.4492935982947064e-16,
+        4.0,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_003",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        -2.82842712474619,
+        2.8284271247461903,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_004",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        -4.0,
+        4.898587196589413e-16,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_005",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        -2.8284271247461907,
+        -2.82842712474619,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_006",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        -7.347880794884119e-16,
+        -4.0,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    },
+    {
+      "cx": null,
+      "cy": null,
+      "far": 10.0,
+      "fov_y_deg": 45.0,
+      "fx": null,
+      "fy": null,
+      "height": 480,
+      "name": "cam_007",
+      "near": 0.01,
+      "pose_matrix_4x4": null,
+      "position": [
+        2.8284271247461894,
+        -2.8284271247461907,
+        0.7
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 640
+    }
+  ]
+}

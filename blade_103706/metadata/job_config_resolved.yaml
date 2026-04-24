@@ -1,0 +1,213 @@
+urdf_path: /tmp/run_pipeline_urdf_z06pbx5m/blade_103706.urdf
+joint_name: blade_103706_joint
+q_start: -0.19000000283122062
+q_end: -0.010000000149011612
+cameras:
+- name: cam_000
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - 4.0
+  - 0.0
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_001
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - 2.8284271247461903
+  - 2.82842712474619
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_002
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - 2.4492935982947064e-16
+  - 4.0
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_003
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - -2.82842712474619
+  - 2.8284271247461903
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_004
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - -4.0
+  - 4.898587196589413e-16
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_005
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - -2.8284271247461907
+  - -2.82842712474619
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_006
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - -7.347880794884119e-16
+  - -4.0
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+- name: cam_007
+  width: 640
+  height: 480
+  near: 0.01
+  far: 10.0
+  fov_y_deg: 45.0
+  position:
+  - 2.8284271247461894
+  - -2.8284271247461907
+  - 0.7
+  target:
+  - 0.0
+  - 0.0
+  - 0.3
+  up:
+  - 0.0
+  - 0.0
+  - 1.0
+  pose_matrix_4x4: null
+  fx: null
+  fy: null
+  cx: null
+  cy: null
+output_dir: /workspace/output/preparation_all/blade_103706
+num_frames: 60
+fps: null
+duration_sec: null
+joint_space: true
+root_pose: null
+image_width: null
+image_height: null
+default_near: null
+default_far: null
+save_depth_png: true
+save_depth_npy: true
+save_video: false
+video_fps: null
+video_codec: libx264
+mask_mode: articulation_ids
+background_color:
+- 0.0
+- 0.0
+- 0.0
+dry_run: false
+list_joints_only: false
+add_ground: false
+num_frames_resolved: 60
