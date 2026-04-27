@@ -2,7 +2,7 @@
 
 Comandi minimi da lanciare dalla root del repo.
 
-DINO in breve: CoTracker produce le track 2D nel tempo; DINO estrae i descrittori sulle track e il matching finale tra camere usa quei descrittori DINO, filtrati con vincoli geometrici.
+DINO in breve: CoTracker produce le track 2D nel tempo; DINO estrae i descrittori RAW sulle track; il matching finale tra camere usa quei descrittori RAW filtrati con vincoli geometrici.
 
 ## 1. Estrai track + feature DINO su tutte le camere
 
@@ -48,4 +48,20 @@ Output principali:
 outputs/blade_103706/global_matches/global_match_table.csv
 outputs/blade_103706/global_matches/global_matches.json
 outputs/blade_103706/global_matches/all_cams_global_matches.mp4
+```
+
+## 4. Analizza la consistenza multiview delle feature DINO RAW
+
+```bash
+python3 analyze_dino_multiview_consistency.py \
+  --object-dir outputs/blade_103706 \
+  --max-frames 60 \
+  --samples-per-frame 1000
+```
+
+Output principali:
+
+```text
+outputs/blade_103706/dino_multiview_summary.csv
+outputs/blade_103706/dino_multiview_comparison.png
 ```

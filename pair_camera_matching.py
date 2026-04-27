@@ -230,14 +230,13 @@ def discover_processed_cameras(output_root: Path) -> list[str]:
             continue
         tracks_path = cam_dir / "cotracker" / "tracks.npz"
         raw_features_path = cam_dir / "dino" / "track_features.npz"
-        aligned_features_path = cam_dir / "dino" / "track_features_aligned.npz"
-        if tracks_path.exists() and (raw_features_path.exists() or aligned_features_path.exists()):
+        if tracks_path.exists() and raw_features_path.exists():
             camera_names.append(cam_dir.name)
 
     if not camera_names:
         raise RuntimeError(
             f"No processed cameras found under {output_root}. "
-            "Expected cotracker/tracks.npz and at least one DINO feature file for each camera."
+            "Expected cotracker/tracks.npz and dino/track_features.npz for each camera."
         )
 
     return camera_names
@@ -265,23 +264,15 @@ def resolve_camera_pairs(
 def load_pair_inputs(
     output_root: Path,
     cam_name: str,
-    prefer_aligned_features: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     track_path = output_root / cam_name / "cotracker" / "tracks.npz"
-    raw_feature_path = output_root / cam_name / "dino" / "track_features.npz"
-    aligned_feature_path = output_root / cam_name / "dino" / "track_features_aligned.npz"
-
-    if prefer_aligned_features and aligned_feature_path.exists():
-        feature_path = aligned_feature_path
-    else:
-        feature_path = raw_feature_path
+    feature_path = output_root / cam_name / "dino" / "track_features.npz"
 
     if not track_path.exists():
         raise FileNotFoundError(f"Missing CoTracker output for {cam_name}: {track_path}")
     if not feature_path.exists():
-        expected = aligned_feature_path if prefer_aligned_features else raw_feature_path
         raise FileNotFoundError(
-            f"Missing DINO track features for {cam_name}: {expected}. "
+            f"Missing DINO track features for {cam_name}: {feature_path}. "
             "Run main.py without --skip-dino-features."
         )
 
@@ -458,12 +449,10 @@ def build_camera_cache(
     dataset_root: Path,
     output_root: Path,
     camera: CameraModel,
-    prefer_aligned_features: bool,
 ) -> dict[str, np.ndarray]:
     tracks, visibilities, features = load_pair_inputs(
         output_root,
         camera.name,
-        prefer_aligned_features=prefer_aligned_features,
     )
     descriptors, descriptor_counts = aggregate_track_descriptors(features, visibilities)
     world_tracks, world_valid = reconstruct_world_tracks(dataset_root, camera, tracks, visibilities)
@@ -797,7 +786,6 @@ def save_pair_matches(
             "common_dino_weight": float(args.common_dino_weight),
             "world_distance_weight": float(args.world_distance_weight),
             "reprojection_weight": float(args.reprojection_weight),
-            "prefer_aligned_dino_features": bool(args.prefer_aligned_dino_features),
         },
         "matches": matches,
     }
@@ -848,7 +836,6 @@ def save_global_matches(
         "num_clusters": len(clusters),
         "config": {
             "global_min_cameras": int(args.global_min_cameras),
-            "prefer_aligned_dino_features": bool(args.prefer_aligned_dino_features),
             "min_track_visible_frames": int(args.min_track_visible_frames),
             "min_common_frames": int(args.min_common_frames),
             "min_dino_similarity": float(args.min_dino_similarity),
@@ -1235,12 +1222,6 @@ def main() -> None:
     parser.add_argument("--world-distance-weight", type=float, default=2.0)
     parser.add_argument("--reprojection-weight", type=float, default=0.25)
     parser.add_argument(
-        "--prefer-aligned-dino-features",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Use track_features_aligned.npz when available, falling back to raw DINO descriptors otherwise",
-    )
-    parser.add_argument(
         "--skip-global-matching",
         action="store_true",
         help="Skip the final multiview aggregation step that merges pairwise matches into global camera clusters",
@@ -1289,7 +1270,6 @@ def main() -> None:
             dataset_root=args.dataset_root,
             output_root=args.output_root,
             camera=camera_models[camera_name],
-            prefer_aligned_features=args.prefer_aligned_dino_features,
         )
 
     print(f"Matching {len(camera_pairs)} camera pair(s)...")

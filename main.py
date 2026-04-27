@@ -9,9 +9,7 @@ import numpy as np
 import torch
 
 from dino_feature_viewer import (
-    apply_track_feature_transform,
     extract_dino_track_features,
-    fit_shared_track_feature_transform,
     load_dino_model,
     run_dino_feature_viewer,
 )
@@ -129,65 +127,6 @@ def draw_tracks_green(
 
     if preview_bgr is not None:
         cv2.imwrite(str(out_preview), preview_bgr)
-
-
-def fit_and_save_shared_dino_track_features(
-    output_root: Path,
-    camera_names: list[str],
-    output_dim: Optional[int],
-    max_samples: int,
-    seed: int = 0,
-) -> Optional[Path]:
-    feature_groups = []
-    loaded_features: dict[str, np.ndarray] = {}
-
-    for camera_name in camera_names:
-        feature_path = output_root / camera_name / "dino" / "track_features.npz"
-        if not feature_path.exists():
-            print(f"Skipping shared DINO alignment for {camera_name}: missing {feature_path}")
-            continue
-
-        with np.load(feature_path) as feature_data:
-            features = np.asarray(feature_data["features"], dtype=np.float32)
-
-        loaded_features[camera_name] = features
-        feature_groups.append(features)
-
-    if len(feature_groups) < 2:
-        print("Skipping shared DINO alignment: need at least two cameras with extracted DINO features.")
-        return None
-
-    mu, basis, scales, explained = fit_shared_track_feature_transform(
-        feature_groups=feature_groups,
-        output_dim=output_dim,
-        max_samples=max_samples,
-        seed=seed,
-    )
-
-    transform_path = output_root / "multiview_dino_alignment.npz"
-    np.savez_compressed(
-        transform_path,
-        mu=mu,
-        basis=basis,
-        scales=scales,
-        explained_variance_ratio=explained,
-        cameras=np.array(sorted(loaded_features.keys())),
-    )
-
-    total_explained = float(explained.sum())
-    print(
-        "Fitted shared DINO alignment "
-        f"(raw_dim={mu.shape[0]}, aligned_dim={basis.shape[1]}, explained={total_explained:.4f})"
-    )
-    print(f"Saved shared DINO alignment → {transform_path}")
-
-    for camera_name, features in loaded_features.items():
-        aligned = apply_track_feature_transform(features, mu, basis, scales)
-        aligned_path = output_root / camera_name / "dino" / "track_features_aligned.npz"
-        np.savez_compressed(aligned_path, features=aligned)
-        print(f"Saved aligned DINO track features → {aligned_path}  shape={aligned.shape}")
-
-    return transform_path
 
 
 def run_camera(
@@ -375,24 +314,6 @@ def main() -> None:
     parser.add_argument("--grid-size", type=int, default=224, help="Grid size for dense tracking (larger = more points)")
     parser.add_argument("--max-frames", type=int, default=None, help="Optional cap on number of frames")
     parser.add_argument("--point-radius", type=int, default=2, help="Radius of rendered green points")
-    parser.add_argument(
-        "--shared-dino-align",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Fit one shared DINO transform across all processed cameras and save aligned track descriptors",
-    )
-    parser.add_argument(
-        "--shared-dino-dim",
-        type=int,
-        default=None,
-        help="Optional output dimension for the shared DINO-aligned descriptors (defaults to raw DINO dim)",
-    )
-    parser.add_argument(
-        "--shared-dino-max-samples",
-        type=int,
-        default=60000,
-        help="Maximum number of pooled DINO descriptors used to fit the shared multiview alignment",
-    )
     args = parser.parse_args()
 
     if torch.cuda.is_available():
@@ -444,14 +365,6 @@ def main() -> None:
             output_root=args.output_root,
             device=device,
             args=args,
-        )
-
-    if args.shared_dino_align and not args.skip_dino_features:
-        fit_and_save_shared_dino_track_features(
-            output_root=args.output_root,
-            camera_names=cams,
-            output_dim=args.shared_dino_dim,
-            max_samples=args.shared_dino_max_samples,
         )
 
     print("\nAll requested cameras processed.")
