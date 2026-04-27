@@ -16,7 +16,8 @@ python3 main.py \
 ## 2. Visualizza le feature DINO multiview
 
 ```bash
-python3 multi_view_dino_feature_viewer.py \
+python3 dino_feature_viewer.py \
+  --multiview \
   --dataset-root blade_103706 \
   --output-root outputs/blade_103706
 ```

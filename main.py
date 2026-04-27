@@ -60,6 +60,26 @@ def load_fg_masks(
     return np.stack(masks, axis=0)
 
 
+def load_saved_tracks(track_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    if not track_path.exists():
+        raise FileNotFoundError(f"Missing saved CoTracker tracks: {track_path}")
+
+    with np.load(track_path) as data:
+        if "tracks" not in data or "visibilities" not in data:
+            raise RuntimeError(f"Invalid saved track file: {track_path}")
+        tracks = np.asarray(data["tracks"], dtype=np.float32)
+        visibilities = np.asarray(data["visibilities"], dtype=bool)
+
+    if tracks.ndim != 3 or tracks.shape[-1] != 2:
+        raise RuntimeError(f"Unexpected saved track shape in {track_path}: {tracks.shape}")
+    if visibilities.shape != tracks.shape[:2]:
+        raise RuntimeError(
+            f"Saved track/visibility mismatch in {track_path}: tracks={tracks.shape}, visibilities={visibilities.shape}"
+        )
+
+    return tracks, visibilities
+
+
 def draw_tracks_green(
     frames_rgb: np.ndarray,
     fg_masks: np.ndarray,
@@ -173,7 +193,7 @@ def fit_and_save_shared_dino_track_features(
 def run_camera(
     cam_name: str,
     rgb_dir: Path,
-    mask_dir: Path,
+    mask_dir: Optional[Path],
     output_root: Path,
     device: str,
     args: argparse.Namespace,
@@ -192,57 +212,70 @@ def run_camera(
 
     print(f"\n=== Camera {cam_name} ===")
     print(f"RGB dir: {rgb_dir}")
-    print(f"Mask dir: {mask_dir}")
-
-    frames_rgb = load_frames(rgb_dir, args.max_frames)
-    fg_masks = load_fg_masks(mask_dir, args.max_frames, target_hw=(frames_rgb.shape[1], frames_rgb.shape[2]))
-
-    if fg_masks.shape[0] != frames_rgb.shape[0]:
-        raise RuntimeError(
-            f"RGB/mask frame count mismatch for {cam_name}: rgb={frames_rgb.shape[0]}, mask={fg_masks.shape[0]}"
-        )
-
-    video_t = torch.from_numpy(frames_rgb).permute(0, 3, 1, 2).float().unsqueeze(0).to(device)
-    segm_mask_t = torch.from_numpy(fg_masks[0].astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-
-    print("Loading CoTracker model from torch hub...")
-    model = torch.hub.load("facebookresearch/co-tracker", "cotracker3_offline")
-    model = model.to(device).eval()
-
-    print("Running tracking...")
-    with torch.no_grad():
-        tracks, visibilities = model(video_t, grid_size=args.grid_size, segm_mask=segm_mask_t)
-
-    visible_first = int((visibilities[0, 0] > 0).sum().item())
-    print(f"Tracked points total: {tracks.shape[2]} | visible on first frame: {visible_first}")
-    if tracks.shape[2] < 50:
-        print("Warning: too few points. Increase --grid-size (e.g. 224 or 256).")
-
-    cotracker_out.mkdir(parents=True, exist_ok=True)
-    tracks_np = tracks[0].detach().cpu().numpy()  # (T, N, 2)
-    vis_np = visibilities[0].detach().cpu().numpy()  # (T, N)
-    np.savez_compressed(
-        cotracker_out / "tracks.npz",
-        tracks=tracks_np,
-        visibilities=vis_np.astype(bool),
-        frame_hw=np.array([frames_rgb.shape[1], frames_rgb.shape[2]], dtype=np.int32),
-    )
-    print(f"Saved CoTracker tracks → {cotracker_out / 'tracks.npz'}  shape={tracks_np.shape}")
-
-    print("Rendering CoTracker output...")
-    draw_tracks_green(
-        frames_rgb=frames_rgb,
-        fg_masks=fg_masks,
-        tracks=tracks,
-        visibilities=visibilities,
-        out_video=cotracker_video,
-        out_preview=cotracker_preview,
-        fps=args.fps,
-        point_radius=args.point_radius,
-    )
-
     need_dino_viewer = not args.skip_dino_viewer
     need_dino_features = not args.skip_dino_features
+    need_tracking = not args.reuse_existing_tracks
+    need_masks = need_tracking or need_dino_viewer
+
+    if mask_dir is not None:
+        print(f"Mask dir: {mask_dir}")
+
+    frames_rgb = load_frames(rgb_dir, args.max_frames)
+    fg_masks = None
+    if need_masks:
+        if mask_dir is None:
+            raise FileNotFoundError(f"Mask directory required for {cam_name} but not provided.")
+        fg_masks = load_fg_masks(mask_dir, args.max_frames, target_hw=(frames_rgb.shape[1], frames_rgb.shape[2]))
+        if fg_masks.shape[0] != frames_rgb.shape[0]:
+            raise RuntimeError(
+                f"RGB/mask frame count mismatch for {cam_name}: rgb={frames_rgb.shape[0]}, mask={fg_masks.shape[0]}"
+            )
+
+    if need_tracking:
+        assert fg_masks is not None
+        video_t = torch.from_numpy(frames_rgb).permute(0, 3, 1, 2).float().unsqueeze(0).to(device)
+        segm_mask_t = torch.from_numpy(fg_masks[0].astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+
+        print("Loading CoTracker model from torch hub...")
+        model = torch.hub.load("facebookresearch/co-tracker", "cotracker3_offline")
+        model = model.to(device).eval()
+
+        print("Running tracking...")
+        with torch.no_grad():
+            tracks, visibilities = model(video_t, grid_size=args.grid_size, segm_mask=segm_mask_t)
+
+        visible_first = int((visibilities[0, 0] > 0).sum().item())
+        print(f"Tracked points total: {tracks.shape[2]} | visible on first frame: {visible_first}")
+        if tracks.shape[2] < 50:
+            print("Warning: too few points. Increase --grid-size (e.g. 224 or 256).")
+
+        cotracker_out.mkdir(parents=True, exist_ok=True)
+        tracks_np = tracks[0].detach().cpu().numpy()  # (T, N, 2)
+        vis_np = visibilities[0].detach().cpu().numpy()  # (T, N)
+        np.savez_compressed(
+            cotracker_out / "tracks.npz",
+            tracks=tracks_np,
+            visibilities=vis_np.astype(bool),
+            frame_hw=np.array([frames_rgb.shape[1], frames_rgb.shape[2]], dtype=np.int32),
+        )
+        print(f"Saved CoTracker tracks → {cotracker_out / 'tracks.npz'}  shape={tracks_np.shape}")
+
+        print("Rendering CoTracker output...")
+        draw_tracks_green(
+            frames_rgb=frames_rgb,
+            fg_masks=fg_masks,
+            tracks=tracks,
+            visibilities=visibilities,
+            out_video=cotracker_video,
+            out_preview=cotracker_preview,
+            fps=args.fps,
+            point_radius=args.point_radius,
+        )
+    else:
+        track_path = cotracker_out / "tracks.npz"
+        tracks_np, vis_np = load_saved_tracks(track_path)
+        print(f"Using existing CoTracker tracks → {track_path}  shape={tracks_np.shape}")
+
     dino_model = None
     if need_dino_viewer or need_dino_features:
         print(f"Loading DINO model from torch hub: {args.dino_repo} / {args.dino_model}")
@@ -253,6 +286,7 @@ def run_camera(
         )
 
     if not args.skip_dino_viewer:
+        assert fg_masks is not None
         print("Running external DINO feature viewer...")
         run_dino_feature_viewer(
             rgb_dir=rgb_dir,
@@ -286,8 +320,9 @@ def run_camera(
         np.savez_compressed(dino_out / "track_features.npz", features=track_feats)
         print(f"Saved DINO track features → {dino_out / 'track_features.npz'}  shape={track_feats.shape}")
 
-    print(f"Done CoTracker video: {cotracker_video}")
-    print(f"Done CoTracker preview: {cotracker_preview}")
+    if need_tracking:
+        print(f"Done CoTracker video: {cotracker_video}")
+        print(f"Done CoTracker preview: {cotracker_preview}")
     if not args.skip_dino_viewer:
         print(f"Done DINO video: {dino_video}")
         print(f"Done DINO preview: {dino_preview}")
@@ -326,6 +361,12 @@ def main() -> None:
         action="store_true",
         help="Skip DINO descriptor extraction at CoTracker track positions",
     )
+    parser.add_argument(
+        "--reuse-existing-tracks",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Reuse existing output-root/cam_XXX/cotracker/tracks.npz instead of rerunning CoTracker",
+    )
     parser.add_argument("--dino-repo", type=str, default="facebookresearch/dinov2",
                         help="torch.hub repository for DINO")
     parser.add_argument("--dino-model", type=str, default="dinov2_vits14",
@@ -362,10 +403,16 @@ def main() -> None:
         device = "cpu"
     print(f"Using device: {device}")
 
+    if args.reuse_existing_tracks and args.clean_output:
+        print("Disabling --clean-output because --reuse-existing-tracks needs the saved tracks to remain in place.")
+        args.clean_output = False
+
     rgb_root = args.dataset_root / "rgb"
     mask_root = args.dataset_root / "mask"
-    if not rgb_root.exists() or not mask_root.exists():
-        raise FileNotFoundError(f"Expected dataset folders not found under: {args.dataset_root}")
+    if not rgb_root.exists():
+        raise FileNotFoundError(f"Expected RGB folder not found under: {args.dataset_root}")
+    if (not args.reuse_existing_tracks or not args.skip_dino_viewer) and not mask_root.exists():
+        raise FileNotFoundError(f"Expected mask folder not found under: {args.dataset_root}")
 
     if args.clean_output and args.output_root.exists():
         print(f"Cleaning previous outputs in: {args.output_root}")
@@ -386,14 +433,14 @@ def main() -> None:
         if not rgb_dir.exists():
             print(f"Skipping {cam_name}: missing RGB dir {rgb_dir}")
             continue
-        if not mask_dir.exists():
+        if (not args.reuse_existing_tracks or not args.skip_dino_viewer) and not mask_dir.exists():
             print(f"Skipping {cam_name}: missing mask dir {mask_dir}")
             continue
 
         run_camera(
             cam_name=cam_name,
             rgb_dir=rgb_dir,
-            mask_dir=mask_dir,
+            mask_dir=mask_dir if mask_dir.exists() else None,
             output_root=args.output_root,
             device=device,
             args=args,
