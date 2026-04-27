@@ -128,6 +128,13 @@ def parse_args() -> argparse.Namespace:
         default=4096,
         help="Chunk size used when computing nearest-neighbor cosine similarity.",
     )
+    parser.add_argument(
+        "--true-match-source",
+        type=str,
+        choices=("pair_only", "pair_and_global"),
+        default="pair_and_global",
+        help="Which pseudo-ground-truth correspondences to evaluate: direct pair matches only, or pair + global aggregation.",
+    )
     args = parser.parse_args()
 
     if args.max_frames is not None and args.max_frames <= 0:
@@ -539,29 +546,31 @@ def load_global_matches_json(
 def load_all_true_matches(
     object_dir: Path,
     camera_names: list[str],
+    source_mode: str,
 ) -> dict[tuple[str, str], PairMatches]:
     known_cameras = set(camera_names)
     store: dict[tuple[str, str], dict[str, object]] = {}
 
     load_pair_matches_from_pair_dir(object_dir, known_cameras, store)
 
-    global_dir = object_dir / "global_matches"
-    if global_dir.is_dir():
-        table_npz = global_dir / "global_match_table.npz"
-        if table_npz.is_file():
-            load_global_match_table_npz(table_npz, object_dir, known_cameras, store)
+    if source_mode == "pair_and_global":
+        global_dir = object_dir / "global_matches"
+        if global_dir.is_dir():
+            table_npz = global_dir / "global_match_table.npz"
+            if table_npz.is_file():
+                load_global_match_table_npz(table_npz, object_dir, known_cameras, store)
 
-        table_csv = global_dir / "global_match_table.csv"
-        if table_csv.is_file():
-            load_global_match_table_csv(table_csv, object_dir, known_cameras, store)
+            table_csv = global_dir / "global_match_table.csv"
+            if table_csv.is_file():
+                load_global_match_table_csv(table_csv, object_dir, known_cameras, store)
 
-        global_npz = global_dir / "global_matches.npz"
-        if global_npz.is_file():
-            load_global_matches_npz(global_npz, object_dir, known_cameras, store)
+            global_npz = global_dir / "global_matches.npz"
+            if global_npz.is_file():
+                load_global_matches_npz(global_npz, object_dir, known_cameras, store)
 
-        global_json = global_dir / "global_matches.json"
-        if global_json.is_file():
-            load_global_matches_json(global_json, object_dir, known_cameras, store)
+            global_json = global_dir / "global_matches.json"
+            if global_json.is_file():
+                load_global_matches_json(global_json, object_dir, known_cameras, store)
 
     return finalize_pair_matches(store)
 
@@ -949,7 +958,11 @@ def main() -> None:
     print(f"Found {len(camera_names)} cameras under {object_dir}")
     print_camera_overview(camera_data)
 
-    true_match_lookup = load_all_true_matches(object_dir, camera_names)
+    true_match_lookup = load_all_true_matches(
+        object_dir,
+        camera_names,
+        source_mode=args.true_match_source,
+    )
     print(f"\nLoaded true-match candidates for {len(true_match_lookup)} camera pairs")
 
     results = evaluate_pairs(
