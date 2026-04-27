@@ -2,6 +2,8 @@
 
 Comandi minimi da lanciare dalla root del repo.
 
+DINO in breve: CoTracker produce le track 2D nel tempo; DINO estrae i descrittori sulle track e il matching finale tra camere usa quei descrittori DINO, filtrati con vincoli geometrici.
+
 ## 1. Estrai track + feature DINO su tutte le camere
 
 ```bash
